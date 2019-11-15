@@ -2,7 +2,7 @@ import
   streams, os
 
 
-proc readCStr (self: Stream): string =
+proc readCStr(self: Stream): string =
   result = ""
   while true:
     let
@@ -11,7 +11,7 @@ proc readCStr (self: Stream): string =
       break
     result.add  c
 
-proc rip2obj (rip, obj: string) =
+proc rip2obj(rip, obj: string) =
   var
     posX_Idx = 0
     posY_Idx = 0
@@ -23,9 +23,9 @@ proc rip2obj (rip, obj: string) =
     tc0_V_Idx = 0
 
   let
-    input = newFileStream (rip, fmRead)
+    input = newFileStream(rip, fmRead)
   if input == nil:
-    raise newException (Exception, "Failed to open file: " & rip)
+    raise newException(Exception, "Failed to open file: " & rip)
 
   let
     signature = cast[uint32](input.readInt32())
@@ -38,10 +38,10 @@ proc rip2obj (rip, obj: string) =
     vertexAttributeCount = cast[uint32](input.readInt32())
 
   if 0xdeadc0de != signature.int:
-    raise newException (Exception, "Sorry, this file signature isn't recognized. Ninjaripper .rip expected.")
+    raise newException(Exception, "Sorry, this file signature isn't recognized. Ninjaripper .rip expected.")
 
   if 4 != version.int:
-    raise newException (Exception, "Sorry, only version 4 Ninjaripper .rip files are supported.")
+    raise newException(Exception, "Sorry, only version 4 Ninjaripper .rip files are supported.")
 
   var
     tempPosIdx = 0   # Get only first index attribute flag
@@ -84,13 +84,13 @@ proc rip2obj (rip, obj: string) =
   var
     textureFiles = newSeq[string]()
   for i in 0..<textureFileCount:
-    textureFiles.add  input.readCStr()
+    textureFiles.add(input.readCStr())
 
   # shaders
   var
     shaderFiles = newSeq[string]()
   for i in 0..<shaderFileCount:
-    shaderFiles.add  input.readCStr()
+    shaderFiles.add(input.readCStr())
 
   # faces
   type
@@ -136,7 +136,7 @@ proc rip2obj (rip, obj: string) =
       of 2:
         pos = input.readInt32().float32
       else:
-        raise newException (Exception, "Unknown vertex element type: " & $elementType)
+        raise newException(Exception, "Unknown vertex element type: " & $elementType)
 
       if   j == posX_Idx: vx = pos
       elif j == posY_Idx: vy = pos
@@ -147,9 +147,9 @@ proc rip2obj (rip, obj: string) =
       elif j == tc0_U_Idx: tu = pos
       elif j == tc0_V_Idx: tv = 1'f32 - pos
 
-    vertArray.add ([vx, vy, vz])
-    normalArray.add ([nx, ny, nz])
-    uvArray.add ([tu, tv])
+    vertArray.add([vx, vy, vz])
+    normalArray.add([nx, ny, nz])
+    uvArray.add([tu, tv])
 
 
   let
@@ -158,63 +158,63 @@ proc rip2obj (rip, obj: string) =
 
     base = obj.splitFile.name
     mtl = obj.splitFile.name & ".mtl"
-    oObj = newFileStream (obj, fmWrite)
+    oObj = newFileStream(obj, fmWrite)
   if oObj == nil:
-    raise newException (Exception, "Failed to open destination file!")
+    raise newException(Exception, "Failed to open destination file!")
 
   for tex in textureFiles:
-    oObj.write ("mtllib " & mtl & "\r\n")
-    oObj.write ("usemtl " & tex & "\r\n")
+    oObj.write("mtllib " & mtl & "\r\n")
+    oObj.write("usemtl " & tex & "\r\n")
   for v in vertArray:
-    oObj.write ("v " & $v[0] & " " & $v[1] & " " & $v[2] & "\r\n")
+    oObj.write("v " & $v[0] & " " & $v[1] & " " & $v[2] & "\r\n")
   for v in normalArray:
-    oObj.write ("vn " & $v[0] & " " & $v[1] & " " & $v[2] & "\r\n")
+    oObj.write("vn " & $v[0] & " " & $v[1] & " " & $v[2] & "\r\n")
   for v in uvArray:
-    oObj.write ("vt " & $v[0] & " " & $v[1] & "\r\n")
+    oObj.write("vt " & $v[0] & " " & $v[1] & "\r\n")
 
   for face in faceArray:
-    oObj.write ("f")
+    oObj.write("f")
     for v in face:
-      oObj.write (" " & $(v+1) & "/" & $(v+1) & "/" & $(v+1))
-    oObj.write ("\r\n")
+      oObj.write(" " & $(v+1) & "/" & $(v+1) & "/" & $(v+1))
+    oObj.write("\r\n")
 
   oObj.close()
 
   let
-    oMtl = newFileStream (outputDir / mtl, fmWrite)
+    oMtl = newFileStream(outputDir / mtl, fmWrite)
   if oMtl == nil:
-    raise newException (Exception, "Failed to open destination file!")
+    raise newException(Exception, "Failed to open destination file!")
 
   for tex in textureFiles:
-    oMtl.write ("newmtl " & tex & "\r\n")
-    oMtl.write ("Ka 1.000 1.000 1.000\r\nKd 1.000 1.000 1.000\r\nKs 0.000 0.000 0.000\r\nd 1.0\r\nillum 2\r\n")
-    oMtl.write ("map_Ka " & tex & "\r\n")
-    oMtl.write ("map_Kd " & tex & "\r\n")
-    oMtl.write ("map_Ks " & tex & "\r\n")
+    oMtl.write("newmtl " & tex & "\r\n")
+    oMtl.write("Ka 1.000 1.000 1.000\r\nKd 1.000 1.000 1.000\r\nKs 0.000 0.000 0.000\r\nd 1.0\r\nillum 2\r\n")
+    oMtl.write("map_Ka " & tex & "\r\n")
+    oMtl.write("map_Kd " & tex & "\r\n")
+    oMtl.write("map_Ks " & tex & "\r\n")
 
     # Copy the .dds textures over:
-    (inputDir / tex).copyFile (outputDir / tex)
+    (inputDir / tex).copyFile(outputDir / tex)
   oMtl.close()
 
 
 
 if paramCount() < 2:
   echo "Usage: rip2obj [FILE/DIR] [DIR]"
-  quit (QuitSuccess)
+  quit(QuitSuccess)
 
 let
-  src = paramStr (1)
-  dst = paramStr (2)
+  src = paramStr(1)
+  dst = paramStr(2)
 dst.createDir()
 if src.dirExists():
-  for file in walkFiles (src / "*.rip"):
+  for file in walkFiles(src / "*.rip"):
     let
       obj = file.splitFile.name & ".obj"
-    file.rip2obj (dst / obj)
+    file.rip2obj(dst / obj)
 elif src.fileExists():
   let
     obj = src.splitFile.name & ".obj"
-  src.rip2obj (dst / obj)
+  src.rip2obj(dst / obj)
 else:
   echo src, " could not be found!"
-  quit (QuitFailure)
+  quit(QuitFailure)
